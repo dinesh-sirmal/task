@@ -1,16 +1,37 @@
+"""Simple fallback tool (mock web search) for demo purposes.
+
+This module provides a very small, easy-to-read fallback used when the
+knowledge base does not contain a confident match for the user's question.
+In production you would replace this with a real web search or external
+tool call. For tests and demos this function returns a clear, friendly
+message explaining why the fallback was used.
 """
-Fallback tool triggered when retrieval confidence is too low (i.e. the question
-is probably not covered by the internal knowledge base). In a real system this
-would call a real web search API; here it's a clearly-labelled mock so the
-behaviour is deterministic and doesn't need extra API keys.
-"""
+
+from typing import Any
 
 
 def web_search_mock(question: str) -> str:
+    """Return a beginner-friendly fallback message.
+
+    Args:
+        question: The user's original question (kept for context/logging).
+
+    Returns:
+        A human-readable string explaining that the system could not find a
+        confident answer in the indexed documentation and that a real web
+        search would be used in production.
+    """
+
+    # Keep the message short, clear, and deterministic so tests can rely on it.
     return (
-        "I couldn't find enough relevant information in the internal knowledge base "
-        "to answer this confidently. This looks like it's outside the scope of the "
-        "indexed documentation (CloudSync API docs). "
-        "[Fallback tool] In a production system this would route to a live web search; "
-        "for this demo it returns this placeholder instead."
+        "Fallback response: I couldn't find enough information in the indexed "
+        "CloudSync documentation to answer your question confidently.\n\n"
+        "What this means:\n"
+        "- The internal docs didn't contain a close match for your question.\n"
+        "- To avoid making up answers, the system used the fallback path instead.\n\n"
+        "In a real system this would call an external web-search API and return "
+        "real results. For this demo the response is a static, easy-to-read message."
     )
+
+
+__all__: list[str] = ["web_search_mock"]
