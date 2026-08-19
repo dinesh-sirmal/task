@@ -130,6 +130,12 @@ Every request logs one structured JSON line (`app/logger.py`) to stdout:
 where latency goes. Token usage uses Gemini's real `usage_metadata` when available, and
 falls back to a ~4-chars/token estimate otherwise (e.g. in mock mode).
 
+Note on token counts: when the configured LLM provider exposes usage metadata the
+logger records the provider's real token counts. In mock mode or when provider
+metadata is unavailable, the project falls back to an approximate token estimate
+(`app/llm_client._approx_tokens`). Tests and evaluation should account for estimated
+values in those cases.
+
 ## 7. Evaluation notes
 
 Manual testing during development (in-KB questions, out-of-scope questions, and an
