@@ -39,7 +39,14 @@ DISTANCE_THRESHOLD = float(os.getenv("DISTANCE_THRESHOLD", "0.75"))
 # `RAG_SIMILARITY_COMPARISON` below (either 'distance' or 'similarity').
 # Default keeps previous behaviour: lower distance is better and 0.75 is the
 # maximum acceptable distance.
-RAG_SIMILARITY_THRESHOLD = float(os.getenv("RAG_SIMILARITY_THRESHOLD", os.getenv("SIMILARITY_THRESHOLD", str(DISTANCE_THRESHOLD))))
+# Explicit default constant for similarity threshold (user requested explicit line)
+# You can override it with the environment variable `SIMILARITY_THRESHOLD` or
+# `RAG_SIMILARITY_THRESHOLD` if you need a different value for testing.
+SIMILARITY_THRESHOLD = 0.70
+
+RAG_SIMILARITY_THRESHOLD = float(
+    os.getenv("RAG_SIMILARITY_THRESHOLD", os.getenv("SIMILARITY_THRESHOLD", str(SIMILARITY_THRESHOLD)))
+)
 
 # How to interpret the vector-store metric when making the fallback decision.
 # - 'distance' means lower is better (e.g. cosine distance).
