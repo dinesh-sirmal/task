@@ -50,14 +50,22 @@ def is_confident_enough(chunks: list[dict]) -> Tuple[bool, float]:
     comparison = config.RAG_SIMILARITY_COMPARISON
     threshold = config.RAG_SIMILARITY_THRESHOLD
 
-    # VectorStore returns a 'distance' field. How to interpret it depends on
-    # the configured comparison mode.
+    # VectorStore returns chunks ordered by relevance (most relevant first).
+    # Use the top result (chunks[0]) as the "best" retrieved item, matching the
+    # behaviour where `best_distance = distances[0]` and then compare to the
+    # configured threshold.
+    top = chunks[0]
+    metric = top.get("distance", 0.0)
+
     if comparison == "distance":
-        best_value = min(c["distance"] for c in chunks)
+        # Lower is better: if the best distance is greater than the threshold,
+        # it's not confident enough (trigger fallback).
+        best_value = metric
         is_confident = best_value <= threshold
     else:
-        # Treat the stored 'distance' as a similarity score when configured.
-        best_value = max(c.get("distance", 0.0) for c in chunks)
+        # Higher is better (similarity score): if the best similarity is below
+        # the threshold, it's not confident enough.
+        best_value = metric
         is_confident = best_value >= threshold
 
     return is_confident, best_value
