@@ -56,7 +56,7 @@ def answer_query(question: str) -> dict:
 
     if looks_like_prompt_injection(question):
         total_ms = (time.perf_counter() - total_start) * 1000
-        log_request(question, True, 0, 0, total_ms, 0, 0)
+        log_request(question, True, 0, 0, total_ms, 0, 0, None, None)
         return {
             "answer": INJECTION_REFUSAL,
             "used_fallback": True,
@@ -69,13 +69,16 @@ def answer_query(question: str) -> dict:
 
     chunks, retrieval_ms = retrieve(question)
 
-    if not is_confident_enough(chunks):
+    is_confident, best_score = is_confident_enough(chunks)
+    configured_threshold = __import__("app.config", fromlist=["RAG_SIMILARITY_THRESHOLD"]).RAG_SIMILARITY_THRESHOLD
+
+    if not is_confident:
         gen_start = time.perf_counter()
         answer = web_search_mock(question)
         generation_ms = (time.perf_counter() - gen_start) * 1000
         total_ms = (time.perf_counter() - total_start) * 1000
         tokens = _approx_tokens(answer)
-        log_request(question, True, retrieval_ms, generation_ms, total_ms, tokens, 0)
+        log_request(question, True, retrieval_ms, generation_ms, total_ms, tokens, 0, best_score, configured_threshold)
         return {
             "answer": answer,
             "used_fallback": True,
@@ -96,7 +99,7 @@ def answer_query(question: str) -> dict:
         answer = _llm_failure_answer(chunks)
         tokens = _approx_tokens(answer)
         log_generation_failure(question, exc)
-        log_request(question, True, retrieval_ms, generation_ms, total_ms, tokens, len(chunks))
+        log_request(question, True, retrieval_ms, generation_ms, total_ms, tokens, len(chunks), best_score, configured_threshold)
         return {
             "answer": answer,
             "used_fallback": True,
@@ -109,7 +112,7 @@ def answer_query(question: str) -> dict:
     generation_ms = (time.perf_counter() - gen_start) * 1000
     total_ms = (time.perf_counter() - total_start) * 1000
 
-    log_request(question, False, retrieval_ms, generation_ms, total_ms, tokens, len(chunks))
+    log_request(question, False, retrieval_ms, generation_ms, total_ms, tokens, len(chunks), best_score, configured_threshold)
 
     return {
         "answer": answer,
@@ -133,17 +136,20 @@ def answer_query_stream(question: str) -> Iterator[str]:
 
     if looks_like_prompt_injection(question):
         yield INJECTION_REFUSAL
-        log_request(question, True, 0, 0, (time.perf_counter() - total_start) * 1000, 0, 0)
+        log_request(question, True, 0, 0, (time.perf_counter() - total_start) * 1000, 0, 0, None, None)
         return
 
     chunks, retrieval_ms = retrieve(question)
 
-    if not is_confident_enough(chunks):
+    is_confident, best_score = is_confident_enough(chunks)
+    configured_threshold = __import__("app.config", fromlist=["RAG_SIMILARITY_THRESHOLD"]).RAG_SIMILARITY_THRESHOLD
+
+    if not is_confident:
         answer = web_search_mock(question)
         for word in answer.split(" "):
             yield word + " "
         total_ms = (time.perf_counter() - total_start) * 1000
-        log_request(question, True, retrieval_ms, 0, total_ms, _approx_tokens(answer), 0)
+        log_request(question, True, retrieval_ms, 0, total_ms, _approx_tokens(answer), 0, best_score, configured_threshold)
         return
 
     prompt = build_prompt(question, chunks)
@@ -158,10 +164,10 @@ def answer_query_stream(question: str) -> Iterator[str]:
         total_ms = (time.perf_counter() - total_start) * 1000
         answer = _llm_failure_answer(chunks)
         log_generation_failure(question, exc)
-        log_request(question, True, retrieval_ms, generation_ms, total_ms, _approx_tokens(answer), len(chunks))
+        log_request(question, True, retrieval_ms, generation_ms, total_ms, _approx_tokens(answer), len(chunks), best_score, configured_threshold)
         yield answer
         return
     generation_ms = (time.perf_counter() - gen_start) * 1000
     total_ms = (time.perf_counter() - total_start) * 1000
     tokens = _approx_tokens(prompt + full_answer)
-    log_request(question, False, retrieval_ms, generation_ms, total_ms, tokens, len(chunks))
+    log_request(question, False, retrieval_ms, generation_ms, total_ms, tokens, len(chunks), best_score, configured_threshold)

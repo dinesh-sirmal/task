@@ -22,6 +22,8 @@ def log_request(
     total_time_ms: float,
     approx_tokens_used: int,
     num_sources: int,
+    best_retrieval_score: float | None = None,
+    configured_threshold: float | None = None,
 ):
     record = {
         "event": "query_completed",
@@ -32,6 +34,8 @@ def log_request(
         "total_time_ms": round(total_time_ms, 2),
         "approx_tokens_used": approx_tokens_used,
         "num_sources": num_sources,
+        "best_retrieval_score": None if best_retrieval_score is None else round(best_retrieval_score, 4),
+        "configured_threshold": None if configured_threshold is None else round(configured_threshold, 4),
     }
     logger.info(json.dumps(record))
 

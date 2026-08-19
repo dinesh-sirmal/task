@@ -32,10 +32,19 @@ CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "120")) # overlap between chunks
 # --- Retrieval / RAG behaviour ---
 TOP_K = int(os.getenv("TOP_K", "4"))
 # The collection is explicitly configured with cosine distance (lower = more similar).
-# A value of 1.1 accepts almost any weak match, so unrelated questions frequently
-# bypass the fallback. 0.75 keeps clearly relevant document matches while routing
-# weak/noisy matches to the fallback tool.
+# Backwards-compatible distance threshold (kept for reference).
 DISTANCE_THRESHOLD = float(os.getenv("DISTANCE_THRESHOLD", "0.75"))
+
+# New, configurable RAG threshold. This value's meaning depends on
+# `RAG_SIMILARITY_COMPARISON` below (either 'distance' or 'similarity').
+# Default keeps previous behaviour: lower distance is better and 0.75 is the
+# maximum acceptable distance.
+RAG_SIMILARITY_THRESHOLD = float(os.getenv("RAG_SIMILARITY_THRESHOLD", str(DISTANCE_THRESHOLD)))
+
+# How to interpret the vector-store metric when making the fallback decision.
+# - 'distance' means lower is better (e.g. cosine distance).
+# - 'similarity' means higher is better (e.g. cosine similarity_score).
+RAG_SIMILARITY_COMPARISON = os.getenv("RAG_SIMILARITY_COMPARISON", "distance").lower()
 
 # --- Docs source ---
 DOCS_DIR = os.getenv("DOCS_DIR", "./data/docs")
